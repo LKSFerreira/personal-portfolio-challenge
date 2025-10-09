@@ -48,4 +48,4 @@ Este projeto está licenciado sob a licença MIT.
 Feito com 💙 por LKSFerreira para o desafio da comunidade Codedex
 
 
-[1](https://www.codedex.io/community/monthly-challenge/rxszczV44NOqXn80BC7Y)
+[1 - www.codedex.io](https://www.codedex.io/community/monthly-challenge/rxszczV44NOqXn80BC7Y)
