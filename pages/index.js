@@ -1,6 +1,5 @@
 // /pages/index.js
-// Renderiza o conteúdo de ./pyodide/index.html (com style/script inlines) dentro de um iframe
-// sem mover arquivos. Leitura dos arquivos é feita no servidor (getServerSideProps).
+// Renderiza o conteúdo de ./terminal/index.html e injeta os dados de internacionalização (i18n).
 
 import fs from "fs";
 import path from "path";
@@ -8,40 +7,34 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 export async function getServerSideProps() {
-  const pastaPyodide = path.join(process.cwd(), "pyodide");
+  const pastaTerminal = path.join(process.cwd(), "terminal");
+  const pastaLocales = path.join(process.cwd(), "locales");
 
   try {
-    // lê os arquivos do disco (rodando no servidor)
-    const arquivoHtml = fs.readFileSync(
-      path.join(pastaPyodide, "index.html"),
-      "utf8",
-    );
-    const arquivoCss = fs.readFileSync(
-      path.join(pastaPyodide, "style.css"),
-      "utf8",
-    );
-    const arquivoJs = fs.readFileSync(
-      path.join(pastaPyodide, "script.js"),
-      "utf8",
-    );
+    // Lê os arquivos do terminal
+    const arquivoHtml = fs.readFileSync(path.join(pastaTerminal, "index.html"), "utf8");
+    const arquivoCss = fs.readFileSync(path.join(pastaTerminal, "style.css"), "utf8");
+    const arquivoJs = fs.readFileSync(path.join(pastaTerminal, "script.js"), "utf8");
 
-    // substitui a referência ao CSS por um <style> inline
-    // (procura por href="style.css" ou href='style.css' para maior robustez)
+    // Lê os arquivos de internacionalização
+    const ptBr = JSON.parse(fs.readFileSync(path.join(pastaLocales, "pt-br.json"), "utf8"));
+    const en = JSON.parse(fs.readFileSync(path.join(pastaLocales, "en.json"), "utf8"));
+    const locales = { "pt-br": ptBr, en };
+
+    // Insere CSS inline
     let htmlComInlines = arquivoHtml.replace(
       /<link[^>]*href=(["'])style\.css\1[^>]*>/i,
-      `<style>\n${arquivoCss}\n</style>`,
+      `<style>\n${arquivoCss}\n</style>`
     );
 
-    // substitui a referência ao script local por um script inline
-    // (procura por <script src="script.js"></script>)
+    // Insere os dados de i18n e o script principal
+    const scriptI18n = `<script>window.locales = ${JSON.stringify(locales)};</script>`;
+    const scriptPrincipal = `<script>\n${arquivoJs}\n</script>`;
+
     htmlComInlines = htmlComInlines.replace(
       /<script[^>]*src=(["'])script\.js\1[^>]*>\s*<\/script>/i,
-      `<script>\n${arquivoJs}\n</script>`,
+      `${scriptI18n}\n${scriptPrincipal}`
     );
-
-    // OBS: se o index.html já carrega pyodide via CDN (<script src="https://...pyodide.js">),
-    // o replace acima não toca nessa tag — ela continuará presente no documento e será carregada
-    // normalmente dentro do iframe.
 
     return {
       props: {
@@ -49,7 +42,6 @@ export async function getServerSideProps() {
       },
     };
   } catch (erro) {
-    // retorna erro para debug na página
     return {
       props: {
         erro: String(erro),
@@ -59,7 +51,6 @@ export async function getServerSideProps() {
 }
 
 export default function Home({ srcDoc, erro }) {
-  // Se houve erro ao ler os arquivos, mostra a mensagem
   if (erro) {
     return (
       <>
@@ -70,12 +61,11 @@ export default function Home({ srcDoc, erro }) {
           }}
         >
           <h2>
-            Erro ao carregar os arquivos do diretório <code>pyodide</code>
+            Erro ao carregar os arquivos do diretório <code>terminal</code> ou <code>locales</code>
           </h2>
           <pre style={{ whiteSpace: "pre-wrap", color: "crimson" }}>{erro}</pre>
           <p>
-            Verifique se a pasta <code>./pyodide</code> existe e contém
-            index.html, style.css e script.js.
+            Verifique se as pastas <code>./terminal</code> e <code>./locales</code> existem e contêm os arquivos necessários.
           </p>
         </main>
         <footer>
@@ -86,13 +76,10 @@ export default function Home({ srcDoc, erro }) {
     );
   }
 
-  // Renderiza um iframe que carrega o HTML gerado (srcDoc)
-  // configuramos sandbox para permitir scripts e mesmo-origem (necessário para Pyodide CDN executar)
-  // ajuste estilos conforme necessário
   return (
     <div style={{ width: "100%", height: "100vh", margin: 0, padding: 0 }}>
       <iframe
-        title="Pyodide Terminal"
+        title="Portfólio Interativo"
         srcDoc={srcDoc}
         style={{ width: "100%", height: "100%", border: "0" }}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"

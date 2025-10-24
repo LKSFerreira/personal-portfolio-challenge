@@ -129,3 +129,26 @@ textarea#entrada-comando {
 textarea#entrada-comando:focus {
   outline: 1px dashed rgba(0, 255, 0, 0.15);
 }
+
+/* Estilos para a saída de comandos */
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.project-description {
+  color: #b0b0b0; /* Cinza claro para a descrição */
+  display: block;
+  margin-left: 1em;
+}
+
+.project-stats {
+  color: #84a98c; /* Verde mais suave */
+  display: block;
+  margin-left: 1em;
+  margin-top: 4px;
+}

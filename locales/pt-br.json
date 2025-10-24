@@ -1,0 +1,22 @@
+{
+  "welcome": "Bem-vindo ao meu portfólio interativo!",
+  "prompt": "Digite '/ajuda' para começar.",
+  "command_not_found": "Comando não reconhecido. Digite '/ajuda' para ver a lista de comandos.",
+  "help_title": "Lista de comandos disponíveis:",
+  "help_commands": {
+    "ajuda": "/ajuda - Mostra esta lista de comandos.",
+    "perfil": "/perfil - Exibe o perfil profissional.",
+    "projetos": "/projetos - Lista os projetos do GitHub.",
+    "limpar": "/limpar - Limpa a tela do terminal.",
+    "lang": "/lang <pt-br|en> - Altera o idioma."
+  },
+  "profile_title": "Exibindo perfil...",
+  "profile_content": {
+    "name": "Lucas Ferreira",
+    "title": "Desenvolvedor Full-Stack",
+    "about": "Apaixonado por tecnologia e por criar soluções que resolvem problemas reais. Tenho experiência em desenvolvimento web com foco em JavaScript, React, Node.js e Next.js.",
+    "contact": "Você pode me encontrar no [LinkedIn](https://www.linkedin.com/in/lksferreira/) ou no [GitHub](https://github.com/LKSFerreira)."
+  },
+  "projects_title": "Buscando projetos no GitHub...",
+  "lang_changed": "Idioma alterado para Português (BR)."
+}
