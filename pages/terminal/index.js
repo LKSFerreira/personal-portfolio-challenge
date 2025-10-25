@@ -62,10 +62,15 @@ export default function Terminal() {
 
     if (comandos[comandoBase]) {
       await comandos[comandoBase](argumentos);
+      // Adiciona uma linha em branco após a execução do comando
+      anexarAoTerminal('\n');
     } else {
       anexarAoTerminal(`${traducoes.command_not_found}: ${comandoBase}`, 'erro');
+      // Adiciona uma linha em branco após mensagem de erro
+      anexarAoTerminal('\n');
     }
   };
+
 
   // ========== Animação de Digitação ==========
 
