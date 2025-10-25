@@ -57,8 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ========== Animação de Digitação ==========
 
   let frasesDigitacao = {
-    "pt-br": ["Portfólio", "Criativo", "de LKSFerreira", "feito para você"],
-    en: ["Creative", "Portfolio", "by LKSFerreira", "made for you"],
+    "pt-br": ["Interativo", "de LKSFerreira", "feito para você", "/ajuda", "/lang en", "/help"],
+    "en": ["Interactive", "by LKSFerreira", "made for you", "/help", "/lang pt-br", "/ajuda"],
   };
   let animacaoEmExecucao = true;
 
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
       anexarAoTerminal(perfil.about);
       anexarAoTerminal(
         perfil.contact.replace(/\(LinkedIn\)/, `(<a href="https://www.linkedin.com/in/lksferreira/" target="_blank">LinkedIn</a>)`)
-                       .replace(/\(GitHub\)/, `(<a href="https://github.com/LKSFerreira" target="_blank">GitHub</a>)`),
+          .replace(/\(GitHub\)/, `(<a href="https://github.com/LKSFerreira" target="_blank">GitHub</a>)`),
         "resultado"
       );
     },

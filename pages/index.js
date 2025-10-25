@@ -7,7 +7,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 export async function getServerSideProps() {
-  const pastaTerminal = path.join(process.cwd(), "terminal");
+  const possibleTerminalDirs = [
+    path.join(process.cwd(), "terminal"),
+    path.join(process.cwd(), "public", "terminal"),
+  ];
+  const pastaTerminal = possibleTerminalDirs.find((d) => fs.existsSync(d));
   const pastaLocales = path.join(process.cwd(), "locales");
 
   try {
@@ -65,7 +69,7 @@ export default function Home({ srcDoc, erro }) {
           </h2>
           <pre style={{ whiteSpace: "pre-wrap", color: "crimson" }}>{erro}</pre>
           <p>
-            Verifique se as pastas <code>./terminal</code> e <code>./locales</code> existem e contêm os arquivos necessários.
+            Verifique se as pastas <code>./terminal</code> ou <code>./public/terminal</code> e <code>./locales</code> existem e contêm os arquivos necessários.
           </p>
         </main>
         <footer>
