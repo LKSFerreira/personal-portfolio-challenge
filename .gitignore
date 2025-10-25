@@ -3,6 +3,7 @@
 
 .vscode/
 tests/samples/
+backup/
 
 ### CircuitPython ###
 .Trashes
