@@ -3,15 +3,16 @@ import { useState, useEffect, useRef } from 'react';
 import styles from './terminal.module.css';
 import ptBr from '../../locales/pt-br.json';
 import en from '../../locales/en.json';
+import { criarComandos, aliasesComandos } from './comandos';
 
 export default function Terminal() {
   // Estados
-  const [lang, setLang] = useState('pt-br');
-  const [historicoComandos, setHistoricoComandos] = useState([]);
-  const [indiceHistorico, setIndiceHistorico] = useState(0);
-  const [comando, setComando] = useState('');
-  const [saida, setSaida] = useState([]);
-  const [palavraDigitacao, setPalavraDigitacao] = useState('');
+  const [idioma, definirIdioma] = useState('pt-br');
+  const [historicoComandos, definirHistoricoComandos] = useState([]);
+  const [indiceHistorico, definirIndiceHistorico] = useState(0);
+  const [comando, definirComando] = useState('');
+  const [saida, definirSaida] = useState([]);
+  const [palavraDigitacao, definirPalavraDigitacao] = useState('');
 
   // Refs
   const areaSaidaRef = useRef(null);
@@ -19,7 +20,7 @@ export default function Terminal() {
 
   // Traduções
   const locales = { 'pt-br': ptBr, 'en': en };
-  const translations = locales[lang];
+  const traducoes = locales[idioma];
 
   // Frases de digitação
   const frasesDigitacao = {
@@ -29,48 +30,74 @@ export default function Terminal() {
 
   // ========== Utilitários ==========
 
-  const escapeHtml = (str) => {
-    return String(str)
+  const escaparHtml = (texto) => {
+    return String(texto)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
   };
 
   const anexarAoTerminal = (texto, tipo = 'info') => {
-    setSaida((prev) => [...prev, { texto, tipo, id: Date.now() + Math.random() }]);
+    definirSaida((anterior) => [...anterior, { texto, tipo, id: Date.now() + Math.random() }]);
+  };
+
+  // ========== Comandos ==========
+
+  const comandos = criarComandos({
+    anexarAoTerminal,
+    traducoes,
+    definirIdioma,
+    definirSaida,
+    locales,
+  });
+
+  const processarComando = async (entrada) => {
+    const partes = entrada.trim().split(' ');
+    let comandoBase = partes[0].toLowerCase().replace('/', '');
+    const argumentos = partes.slice(1);
+
+    if (aliasesComandos[comandoBase]) {
+      comandoBase = aliasesComandos[comandoBase];
+    }
+
+    if (comandos[comandoBase]) {
+      await comandos[comandoBase](argumentos);
+    } else {
+      anexarAoTerminal(`${traducoes.command_not_found}: ${comandoBase}`, 'erro');
+    }
   };
 
   // ========== Animação de Digitação ==========
 
   useEffect(() => {
     let animacaoAtiva = true;
-    let i = 0;
+    let indice = 0;
 
     const animar = async () => {
-      setPalavraDigitacao('');
+      definirPalavraDigitacao('');
 
       while (animacaoAtiva) {
-        const frases = frasesDigitacao[lang];
-        const palavra = frases[i % frases.length];
+        const frases = frasesDigitacao[idioma];
+        const palavra = frases[indice % frases.length];
 
         // Digitar
         for (let j = 1; j <= palavra.length; j++) {
           if (!animacaoAtiva) return;
-          setPalavraDigitacao(' ' + palavra.slice(0, j));
-          await new Promise((r) => setTimeout(r, 80));
+          definirPalavraDigitacao(' ' + palavra.slice(0, j));
+          await new Promise((resolver) => setTimeout(resolver, 80));
         }
 
-        await new Promise((r) => setTimeout(r, 1200));
+        await new Promise((resolver) => setTimeout(resolver, 1200));
 
         // Apagar
         for (let j = palavra.length; j >= 0; j--) {
           if (!animacaoAtiva) return;
-          setPalavraDigitacao(j > 0 ? ' ' + palavra.slice(0, j) : '');
-          await new Promise((r) => setTimeout(r, 40));
+          definirPalavraDigitacao(j > 0 ? ' ' + palavra.slice(0, j) : '');
+          await new Promise((resolver) => setTimeout(resolver, 40));
         }
 
-        await new Promise((r) => setTimeout(r, 400));
-        i++;
+        await new Promise((resolver) => setTimeout(resolver, 400));
+        indice++;
       }
     };
 
@@ -79,7 +106,7 @@ export default function Terminal() {
     return () => {
       animacaoAtiva = false;
     };
-  }, [lang]);
+  }, [idioma]);
 
   // ========== Scroll Automático ==========
 
@@ -89,125 +116,42 @@ export default function Terminal() {
     }
   }, [saida]);
 
-  // ========== Comandos ==========
-
-  const comandos = {
-    ajuda: () => {
-      anexarAoTerminal(translations.help_title);
-      for (const comando in translations.help_commands) {
-        anexarAoTerminal(`  ${translations.help_commands[comando]}`);
-      }
-    },
-    perfil: () => {
-      const perfil = translations.profile_content;
-      anexarAoTerminal(`## ${perfil.name}`);
-      anexarAoTerminal(`**${perfil.title}**`);
-      anexarAoTerminal(perfil.about);
-      anexarAoTerminal(
-        perfil.contact
-          .replace(
-            /\(LinkedIn\)/,
-            `(<a href="https://www.linkedin.com/in/lksferreira/" target="_blank">LinkedIn</a>)`
-          )
-          .replace(/\(GitHub\)/, `(<a href="https://github.com/LKSFerreira" target="_blank">GitHub</a>)`),
-        'resultado'
-      );
-    },
-    projetos: async () => {
-      anexarAoTerminal(translations.projects_title);
-      try {
-        const response = await fetch('/api/v1/projetos');
-        if (!response.ok) {
-          throw new Error('Falha ao carregar projetos.');
-        }
-        const projects = await response.json();
-
-        if (projects.length === 0) {
-          anexarAoTerminal('Nenhum projeto encontrado.');
-          return;
-        }
-
-        projects.forEach((proj) => {
-          const projectOutput = `\n<a href="${proj.url}" target="_blank">${proj.name}</a>\n  <span class="project-description">${proj.description}</span>\n  <span class="project-stats"> Linguagem: ${proj.language || 'N/A'} | ★ ${proj.stars}</span>`;
-          anexarAoTerminal(projectOutput, 'resultado');
-        });
-      } catch (error) {
-        anexarAoTerminal(`Erro ao buscar projetos: ${error.message}`, 'erro');
-      }
-    },
-    limpar: () => {
-      setSaida([]);
-    },
-    lang: (args) => {
-      const novoLang = args[0];
-      if (locales[novoLang]) {
-        setLang(novoLang);
-        anexarAoTerminal(locales[novoLang].lang_changed);
-      } else {
-        anexarAoTerminal(`Idioma '${novoLang}' não suportado. Use 'pt-br' ou 'en'.`, 'erro');
-      }
-    },
-  };
-
-  const aliasComandos = {
-    help: 'ajuda',
-    profile: 'perfil',
-    projects: 'projetos',
-    clear: 'limpar',
-  };
-
-  const processarComando = async (entrada) => {
-    const partes = entrada.trim().split(' ');
-    let comandoBase = partes[0].toLowerCase().replace('/', '');
-    const args = partes.slice(1);
-
-    if (aliasComandos[comandoBase]) {
-      comandoBase = aliasComandos[comandoBase];
-    }
-
-    if (comandos[comandoBase]) {
-      await comandos[comandoBase](args);
-    } else {
-      anexarAoTerminal(`${translations.command_not_found}: ${comandoBase}`, 'erro');
-    }
-  };
-
   // ========== Handler de Teclado ==========
 
-  const handleKeyDown = async (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
+  const manipularTecla = async (evento) => {
+    if (evento.key === 'Enter') {
+      evento.preventDefault();
       const entrada = comando.trim();
       if (!entrada) return;
 
       anexarAoTerminal(entrada, 'usuario');
-      setHistoricoComandos((prev) => [...prev, entrada]);
-      setIndiceHistorico((prev) => prev + 1);
+      definirHistoricoComandos((anterior) => [...anterior, entrada]);
+      definirIndiceHistorico((anterior) => anterior + 1);
 
       await processarComando(entrada);
 
-      setComando('');
+      definirComando('');
       entradaComandoRef.current?.focus();
     }
 
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
+    if (evento.key === 'ArrowUp') {
+      evento.preventDefault();
       if (indiceHistorico > 0) {
         const novoIndice = indiceHistorico - 1;
-        setIndiceHistorico(novoIndice);
-        setComando(historicoComandos[novoIndice]);
+        definirIndiceHistorico(novoIndice);
+        definirComando(historicoComandos[novoIndice]);
       }
     }
 
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
+    if (evento.key === 'ArrowDown') {
+      evento.preventDefault();
       if (indiceHistorico < historicoComandos.length - 1) {
         const novoIndice = indiceHistorico + 1;
-        setIndiceHistorico(novoIndice);
-        setComando(historicoComandos[novoIndice]);
+        definirIndiceHistorico(novoIndice);
+        definirComando(historicoComandos[novoIndice]);
       } else {
-        setIndiceHistorico(historicoComandos.length);
-        setComando('');
+        definirIndiceHistorico(historicoComandos.length);
+        definirComando('');
       }
     }
   };
@@ -215,8 +159,8 @@ export default function Terminal() {
   // ========== Inicialização ==========
 
   useEffect(() => {
-    anexarAoTerminal(translations.welcome);
-    anexarAoTerminal(translations.prompt);
+    anexarAoTerminal(traducoes.welcome);
+    anexarAoTerminal(traducoes.prompt);
     entradaComandoRef.current?.focus();
   }, []);
 
@@ -237,7 +181,7 @@ export default function Terminal() {
           if (item.tipo === 'usuario') {
             return (
               <p key={item.id} style={{ whiteSpace: 'pre-wrap' }}>
-                <span className={styles.prompt}>{'>'}</span> {escapeHtml(item.texto)}
+                <span className={styles.prompt}>{'>'}</span> {escaparHtml(item.texto)}
               </p>
             );
           } else if (item.tipo === 'resultado') {
@@ -267,8 +211,8 @@ export default function Terminal() {
           ref={entradaComandoRef}
           id="entrada-comando"
           value={comando}
-          onChange={(e) => setComando(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(evento) => definirComando(evento.target.value)}
+          onKeyDown={manipularTecla}
           placeholder="Digite um comando..."
           className={styles.inputComando}
         />
