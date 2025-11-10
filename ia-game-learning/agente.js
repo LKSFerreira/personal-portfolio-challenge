@@ -163,156 +163,151 @@ export class AgenteQLearning {
   /**
  * Decide qual jogada fazer usando a estratégia Epsilon-Greedy.
  * 
- * É a estratégia que equilibra "Aventura" (exploração) e "Farm" (exploração).
+ * É a estratégia que equilibra "Aventura" (Exploração) e "Farm" (Exploitação).
  * Como um jogador de Ragnarok que às vezes sai do caminho conhecido para
  * explorar novos mapas (pode encontrar algo melhor) ou fica no mapa conhecido
  * farmando o que já sabe que funciona.
  * 
  * A estratégia funciona assim:
  * - Durante o treinamento: com probabilidade epsilon (ε), escolhe ação aleatória
- *   (exploração). Caso contrário, escolhe a melhor ação conhecida (exploração).
+ *   (exploração). Caso contrário, escolhe a melhor ação conhecida (exploitação).
  * - Fora do treinamento: sempre escolhe a melhor ação conhecida.
  * 
  * @param {Array} estado - O estado atual do tabuleiro
- * @param {Array<number>} acoesValidas - Lista de posições disponíveis para jogar (0-8)
+ * @param {Array<number>} acoesValidas - Lista de posições disponíveis para jogar [0-8]
  * @param {boolean} [emTreinamento=true] - Se true, usa epsilon-greedy. Se false, sempre escolhe a melhor ação
  * @returns {number} A ação escolhida (posição de 0 a 8 no tabuleiro)
  * @throws {Error} Se não houver ações válidas disponíveis
  */
-escolherAcao(estado, acoesValidas, emTreinamento = true) {
-  if (!acoesValidas || acoesValidas.length === 0)
-    throw new Error("Não há ações válidas para escolher.");
+  escolherAcao(estado, acoesValidas, emTreinamento = true) {
+    if (!acoesValidas || acoesValidas.length === 0)
+      throw new Error("Não há ações válidas para escolher.");
 
-  if (!emTreinamento)
-    return this.#escolherMelhorAcao(estado, acoesValidas);
+    if (!emTreinamento)
+      return this.#escolherMelhorAcao(estado, acoesValidas);
 
-  if (Math.random() < this.epsilon) {
-    // "Modo Aventura": explora
-    return acoesValidas[Math.floor(Math.random() * acoesValidas.length)];
-  } else {
-    // "Modo Farm": usa melhor tática
-    return this.#escolherMelhorAcao(estado, acoesValidas);
-  }
-}
-
-/**
- * Consulta a "memória" e escolhe a ação com o maior valor Q.
- * 
- * É como olhar na "Enciclopédia de Monstros" e escolher a tática que
- * já provou ser a mais eficaz. Se houver empate (várias táticas igualmente
- * boas), escolhe aleatoriamente entre elas para evitar sempre fazer o mesmo
- * padrão de jogadas.
- * 
- * Processo:
- * 1. Avalia o valor Q de todas as ações válidas
- * 2. Encontra o maior valor Q
- * 3. Se houver empate, escolhe aleatoriamente entre as melhores
- * 
- * @private
- * @param {Array} estado - O estado atual do tabuleiro
- * @param {Array<number>} acoesValidas - Lista de posições disponíveis para jogar (0-8)
- * @returns {number} A melhor ação escolhida (posição de 0 a 8 no tabuleiro)
- */
-#escolherMelhorAcao(estado, acoesValidas) {
-  const valoresQdasAcoes = {};
-  for (const acao of acoesValidas) {
-    valoresQdasAcoes[acao] = this.obterValorQ(estado, acao);
-  }
-  const valorMaximoQ = Math.max(...Object.values(valoresQdasAcoes));
-  const melhoresAcoes = Object.entries(valoresQdasAcoes)
-    .filter(([_, v]) => v === valorMaximoQ)
-    .map(([k]) => parseInt(k));
-
-  return melhoresAcoes[Math.floor(Math.random() * melhoresAcoes.length)];
-}
-
-/**
- * Processa o histórico de uma partida finalizada para aprender com ela.
- * 
- * É como ganhar EXP no Ragnarok: depois da batalha, você revisa tudo que fez
- * (do fim para o começo) e aprende quais movimentos foram bons ou ruins.
- * O Agente também fica menos curioso (epsilon decay) à medida que ganha experiência.
- * 
- * O aprendizado acontece de trás pra frente porque:
- * - A última jogada teve impacto direto no resultado
- * - Jogadas anteriores tiveram impacto mais indireto (multiplicado por gamma)
- * 
- * @param {Array<Array>} historicoPartida - Array de tuplas [estado, acao, proximo_estado]
- * @param {number} recompensaFinal - Recompensa final da partida (+1 vitória, -1 derrota, 0 empate)
- * @returns {void}
- */
-aprenderJogando(historicoPartida, recompensaFinal) {
-  this.partidasTreinadas += 1;
-  if (recompensaFinal > 0.5) this.vitorias++;
-  else if (recompensaFinal < 0.5) this.derrotas++;
-  else this.empates++;
-
-  for (let i = historicoPartida.length - 1; i >= 0; i--) {
-    const [estado, acao, proximoEstado] = historicoPartida[i];
-    this.atualizarValorQ(estado, acao, recompensaFinal, proximoEstado);
-    recompensaFinal *= this.gamma;
+    if (Math.random() < this.epsilon) {
+      // "Modo Aventura": explora
+      return acoesValidas[Math.floor(Math.random() * acoesValidas.length)];
+    } else {
+      // "Modo Farm": usa melhor tática
+      return this.#escolherMelhorAcao(estado, acoesValidas);
+    }
   }
 
-  this.reduzirEpsilon();
-}
+  /**
+   * Consulta a "memória" e escolhe a ação com o maior valor Q.
+   * 
+   * É como olhar na "Enciclopédia de Monstros" e escolher a tática que
+   * já provou ser a mais eficaz. Se houver empate (várias táticas igualmente
+   * boas), escolhe aleatoriamente entre elas para evitar sempre fazer o mesmo
+   * padrão de jogadas.
+   * 
+   * Processo:
+   * 1. Avalia o valor Q de todas as ações válidas
+   * 2. Encontra o maior valor Q
+   * 3. Se houver empate, escolhe aleatoriamente entre as melhores
+   * 
+   * @private
+   * @param {Array} estado - O estado atual do tabuleiro
+   * @param {Array<number>} acoesValidas - Lista de posições disponíveis para jogar [0-8]
+   * @returns {number} A melhor ação escolhida (posição de 0 a 8 no tabuleiro)
+   */
+  #escolherMelhorAcao(estado, acoesValidas) {
+    const valoresQdasAcoes = {};
+    for (const acao of acoesValidas) {
+      valoresQdasAcoes[acao] = this.obterValorQ(estado, acao);
+    }
+    const valorMaximoQ = Math.max(...Object.values(valoresQdasAcoes));
+    const melhoresAcoes = Object.entries(valoresQdasAcoes)
+      .filter(([_, v]) => v === valorMaximoQ)
+      .map(([k]) => parseInt(k));
 
-/**
- * Reduz a "curiosidade" do Agente ao longo do tempo (epsilon decay).
- * 
- * É como um jogador de Ragnarok que, conforme ganha experiência,
- * para de explorar mapas aleatórios e foca nas rotas que já conhece.
- * O epsilon nunca fica menor que o mínimo configurado.
- * 
- * Fórmula: epsilon = max(epsilon_minimo, epsilon × taxa_decaimento)
- * 
- * @returns {void}
- */
-reduzirEpsilon() {
-  this.epsilon = Math.max(this.epsilonMinimo, this.epsilon * this.taxaDecaimentoEpsilon);
-}
-
-/**
- * Salva o conhecimento do Agente (a Tabela Q) em um arquivo JSON.
- * 
- * É como salvar o "save game" no Ragnarok: toda a experiência e conhecimento
- * adquirido é preservado para ser usado depois. O diretório é criado
- * automaticamente se não existir.
- * 
- * @param {string} [caminho="agente_treinado.json"] - Caminho onde salvar o arquivo JSON
- * @returns {void}
- */
-salvarMemoria(caminho = "agente_treinado.json") {
-  const caminhoCompleto = path.resolve(caminho);
-  fs.mkdirSync(path.dirname(caminhoCompleto), { recursive: true });
-  fs.writeFileSync(caminhoCompleto, JSON.stringify(this.tabelaQ, null, 2));
-  console.log(`💾 Memória do Agente salva em: ${caminhoCompleto}`);
-}
-
-/**
- * Carrega o conhecimento de um Agente previamente treinado.
- * 
- * É como carregar um "save game" no Ragnarok: o Agente recupera toda
- * a experiência e conhecimento que tinha antes. Se o arquivo não existir,
- * o Agente começa do zero (tabela Q vazia).
- * 
- * @param {string} caminho - Caminho do arquivo JSON contendo a tabela Q
- * @returns {void}
- */
-carregarMemoria(caminho) {
-  const caminhoCompleto = path.resolve(caminho);
-  if (!fs.existsSync(caminhoCompleto)) {
-    console.log(`⚠️  Aviso: Nenhum arquivo de memória encontrado em ${caminho}. O Agente começará do zero.`);
-    return;
+    return melhoresAcoes[Math.floor(Math.random() * melhoresAcoes.length)];
   }
 
-  this.tabelaQ = JSON.parse(fs.readFileSync(caminhoCompleto, 'utf-8'));
-  console.log(`✅ Memória do Agente carregada de: ${caminhoCompleto}`);
-  console.log(`   - O Agente conhece ${Object.keys(this.tabelaQ).length.toLocaleString()} situações de jogo.`);
-}
+  /**
+   * Processa o histórico de uma partida finalizada para aprender com ela.
+   * 
+   * É como ganhar EXP no Ragnarok: depois da batalha, você revisa tudo que fez
+   * (do fim para o começo) e aprende quais movimentos foram bons ou ruins.
+   * O Agente também fica menos curioso (epsilon decay) à medida que ganha experiência.
+   * 
+   * O aprendizado acontece de trás pra frente porque:
+   * - A última jogada teve impacto direto no resultado
+   * - Jogadas anteriores tiveram impacto mais indireto (multiplicado por gamma)
+   * 
+   * @param {Array<Array>} historicoPartida - Array de tuplas [estado, acao, proximoEstado]
+   * @param {number} recompensaFinal - Recompensa final da partida (+1 vitória, -1 derrota, 0 empate)
+   * @returns {void}
+   */
+  aprenderJogando(historicoPartida, recompensaFinal) {
+    this.partidasTreinadas++;
 
+    if (recompensaFinal > 0) this.vitorias++;
+    else if (recompensaFinal < 0) this.derrotas++;
+    else this.empates++;
 
+    for (let i = historicoPartida.length - 1; i >= 0; i--) {
+      const [estado, acao, proximoEstado] = historicoPartida[i];
+      this.atualizarValorQ(estado, acao, recompensaFinal, proximoEstado);
+      recompensaFinal *= this.gamma;
+    }
 
+    this.#reduzirEpsilon();
+  }
 
+  /**
+   * Reduz a "curiosidade" do Agente ao longo do tempo (epsilon decay).
+   * 
+   * É como um jogador de Ragnarok que, conforme ganha experiência,
+   * para de explorar mapas aleatórios e foca nas rotas que já conhece.
+   * O epsilon nunca fica menor que o mínimo configurado.
+   * 
+   * Fórmula: epsilon = max(epsilon_minimo, epsilon × taxa_decaimento)
+   * 
+   * @returns {void}
+   */
+  #reduzirEpsilon() {
+    this.epsilon = Math.max(this.epsilonMinimo, this.epsilon * this.taxaDecaimentoEpsilon);
+  }
 
+  /**
+   * Salva o conhecimento do Agente (a Tabela Q) em um arquivo JSON.
+   * 
+   * É como salvar o "save game" no Ragnarok: toda a experiência e conhecimento
+   * adquirido é preservado para ser usado depois. O diretório é criado
+   * automaticamente se não existir.
+   * 
+   * @param {string} [caminho="agente_treinado.json"] - Caminho onde salvar o arquivo JSON
+   * @returns {void}
+   */
+  salvarMemoria(caminho = "agente_treinado.json") {
+    const caminhoCompleto = path.resolve(caminho);
+    fs.mkdirSync(path.dirname(caminhoCompleto), { recursive: true });
+    fs.writeFileSync(caminhoCompleto, JSON.stringify(this.tabelaQ, null, 2));
+    console.log(`💾 Memória do Agente salva em: ${caminhoCompleto}`);
+  }
 
+  /**
+   * Carrega o conhecimento de um Agente previamente treinado.
+   * 
+   * É como carregar um "save game" no Ragnarok: o Agente recupera toda
+   * a experiência e conhecimento que tinha antes. Se o arquivo não existir,
+   * o Agente começa do zero (tabela Q vazia).
+   * 
+   * @param {string} caminho - Caminho do arquivo JSON contendo a tabela Q
+   * @returns {void}
+   */
+  carregarMemoria(caminho) {
+    const caminhoCompleto = path.resolve(caminho);
+    if (!fs.existsSync(caminhoCompleto)) {
+      console.log(`⚠️  Aviso: Nenhum arquivo de memória encontrado em ${caminho}. O Agente começará do zero.`);
+      return;
+    }
+
+    this.tabelaQ = JSON.parse(fs.readFileSync(caminhoCompleto, 'utf-8'));
+    console.log(`✅ Memória do Agente carregada de: ${caminhoCompleto}`);
+    console.log(`   - O Agente conhece ${Object.keys(this.tabelaQ).length.toLocaleString()} situações de jogo.`);
+  }
 }
