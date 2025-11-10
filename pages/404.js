@@ -8,7 +8,7 @@ export default function PaginaNaoEncontrada() {
   useEffect(() => {
     // Redireciona automaticamente para /terminal após 2 segundos
     const temporizador = setTimeout(() => {
-      roteador.push('/terminal');
+      roteador.push('/404');
     }, 2000);
 
     // Cleanup do temporizador
@@ -34,7 +34,7 @@ export default function PaginaNaoEncontrada() {
         Redirecionando para o terminal em 2 segundos...
       </p>
       <a 
-        href="/terminal" 
+        href="/" 
         style={{ 
           color: '#00ff00', 
           textDecoration: 'underline',

@@ -7,7 +7,7 @@ export default function Home() {
 
   useEffect(() => {
     // Redireciona automaticamente para /terminal
-    router.push('/terminal');
+    router.push('/404');
   }, [router]);
 
   return (
