@@ -1,6 +1,7 @@
 {
   "name": "autodub",
   "version": "1.0.0",
+  "type": "module",
   "description": "Projeto opensource para dublagem de vídeos baseado em LLM.",
   "main": "index.js",
   "directories": {
