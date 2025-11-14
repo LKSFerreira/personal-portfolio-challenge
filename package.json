@@ -1,8 +1,8 @@
 {
-  "name": "autodub",
+  "name": "game-hub-ia",
   "version": "1.0.0",
-  "type": "module",
-  "description": "Projeto opensource para dublagem de vídeos baseado em LLM.",
+  "type": "commonjs",
+  "description": "O objetivo principal deste repositório é documentar minha jornada de aprendizado.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
