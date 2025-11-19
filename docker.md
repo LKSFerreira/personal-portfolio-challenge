@@ -1,171 +1,126 @@
-# 🐳 Guia de Comandos Docker Compose
+# 🐳 Docker Compose: Guia Rápido
 
-Este documento contém os comandos mais utilizados para gerenciar o ambiente de desenvolvimento com Docker.
-
----
-
-## 🚀 Comandos Básicos
-
-### Iniciar o ambiente de desenvolvimento
-
-```bash
-docker-compose up
-```
-
-### Iniciar em segundo plano (modo detached)
-
-```bash
-docker-compose up -d
-```
-
-### Parar os containers
-
-```bash
-docker-compose stop
-```
-
-### Parar e remover os containers
-
-```bash
-docker-compose down
-```
-
-### Parar, remover containers e volumes
-
-```bash
-docker-compose down -v
-```
+Comandos essenciais para o fluxo de desenvolvimento no projeto.
+**Serviço principal:** `app`
 
 ---
 
-## 📊 Monitoramento
+## ⚡ Fluxo Diário (Workflow)
 
-### Ver logs em tempo real
+**Subir o ambiente**
+Roda tudo e trava o terminal (bom para ver logs iniciais).
+```bash
+docker compose up
+````
+
+*Use `docker compose up -d` para rodar em segundo plano (libera o terminal).*
+
+**Parar e remover**
+Para os containers e remove a rede criada (ideal para o fim do dia).
 
 ```bash
-docker-compose logs -f
+docker compose down
 ```
 
-### Ver logs de um serviço específico
+**Ver logs**
 
 ```bash
-docker-compose logs -f app
+docker compose logs -f app
 ```
 
-### Listar containers ativos
+-----
+
+## 🛠️ Executando Comandos (NPM / Shell)
+
+*Regra de ouro: Use `exec app` para rodar comandos dentro do container.*
+
+**Acessar o terminal do container (SSH)**
 
 ```bash
-docker-compose ps
+docker compose exec app sh
 ```
 
----
-
-## 🔧 Executando Comandos
-
-### Executar comando dentro do container
+**Comandos NPM (Exemplos)**
 
 ```bash
-docker-compose exec app <comando>
+# Rodar testes
+docker compose exec app npm test
+
+# Instalar dependências
+docker compose exec app npm install dependencia
+docker compose exec app npm install --save-dev jest
+
+# Rodar scripts do package.json
+docker compose exec app npm run test
 ```
 
-### Instalar nova dependência
+-----
+
+## 🔧 Manutenção e Problemas
+
+**Recriar containers**
+Use se alterou o `compose.yaml` (ex: mudou portas ou volumes).
 
 ```bash
-docker-compose exec app npm install nome-do-pacote
+docker compose up -d --build
 ```
 
-### Instalar dependência de desenvolvimento
+**Limpeza pesada (Reset)**
+Se algo travar, isso apaga a pasta `.next` e reconstrói o container.
 
 ```bash
-docker-compose exec app npm install --save-dev nome-do-pacote
+docker compose down
+rm -rf .next
+docker compose up --build
 ```
 
-### Executar scripts do package.json
-
-```bash
-docker-compose exec app npm run <nome-do-script>
-```
-
-### Abrir shell dentro do container
-
-```bash
-docker-compose exec app sh
-```
-
----
-
-## 🏗️ Rebuild e Manutenção
-
-### Recriar containers (após mudanças no docker-compose.yml)
-
-```bash
-docker-compose up --build
-```
-
-### Forçar rebuild da imagem
-
-```bash
-docker-compose build --no-cache
-```
-
-### Limpar cache do Next.js dentro do container
-
-```bash
-docker-compose exec app rm -rf .next
-```
-
----
-
-## 🧹 Limpeza
-
-### Remover containers, redes e volumes não utilizados
+**Limpar tudo (Danger Zone)**
+Remove containers, redes e imagens não usadas para liberar espaço no disco.
 
 ```bash
 docker system prune -a
 ```
 
-### Remover apenas volumes não utilizados
+-----
+
+## 🚀 Dica de Produtividade: Aliases (Atalhos)
+
+Cansado de digitar `docker compose exec app` toda hora? Crie um atalho.
+
+### 1\. Alias Temporário
+
+*Dura apenas enquanto este terminal estiver aberto.*
 
 ```bash
-docker volume prune
+alias d="docker compose exec app"
 ```
 
----
+**Como usar:** `d npm install zod`
 
-## ⚠️ Solução de Problemas
+### 2\. Alias Permanente (Recomendado)
 
-### Container não inicia corretamente
+*Fica salvo para sempre no seu VSCode/Bash.*
 
-```bash
-# Parar tudo
-docker-compose down
+1.  Abra o arquivo de configuração do seu terminal:
 
-# Limpar cache
-rm -rf .next
+    ```bash
+    code ~/.bashrc
+    ```
 
-# Iniciar novamente
-docker-compose up --build
-```
+2.  Adicione esta linha no final do arquivo:
 
-### Problemas com dependências
+    ```bash
+    alias d="docker compose exec app"
+    alias dc="docker compose"
+    ```
 
-```bash
-# Remover node_modules e reinstalar
-docker-compose exec app rm -rf node_modules
-docker-compose exec app npm install
-```
+3.  Salve o arquivo e atualize o terminal:
 
-### Ver erros detalhados
+    ```bash
+    source ~/.bashrc
+    ```
 
-```bash
-docker-compose logs app
-```
+**Agora você pode fazer:**
 
----
-
-## 📝 Notas Importantes
-
-* O volume `- /app/node_modules` protege as dependências instaladas no container.
-* O modo `NODE_ENV=development` ativa recursos de desenvolvimento do Next.js.
-* Mudanças no código são detectadas automaticamente (hot-reload).
-* O cache do Webpack é armazenado em `.next/cache`.
+  * `dc up` (para subir)
+  * `d npm run dev` (para rodar comandos)
